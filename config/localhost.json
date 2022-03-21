@@ -1,0 +1,24 @@
+{
+  "app": {
+    "port": "8000",
+    "name": "Emma technical task"
+  },
+  "postgres": {
+    "database": "emma",
+    "port": 5435,
+    "host": "localhost",
+    "user": "local",
+    "password": "local"
+  },
+  "knex": {
+    "migrationExtension": [".ts"]
+  },
+  "account": {
+    "reward": "emma"
+  },
+  "claims": [
+    { "p0": 0, "p1": 0.94, "min": 3, "max": 10 },
+    { "p0": 0.95, "p1": 0.97, "min": 11, "max": 25 },
+    { "p0": 0.98, "p1": 1.0, "min": 26, "max": 200 }
+  ]
+}
