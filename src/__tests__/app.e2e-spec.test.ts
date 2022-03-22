@@ -116,19 +116,21 @@ describe("Test the Emma Service", () => {
         });
       });
       describe("Given the user Account not available", () => {
-        it("should get free share", async () => {
+        it("should create the new account and get free share", async () => {
           await initDbData();
           const data = {
             user: "user2",
           };
 
           const res = await supertest(app).post("/v1/claim-free-share").send(data);
-          expect(res.status).toEqual(400);
-          expect(res.body).toStrictEqual({
-            outcome: "FAILURE",
-            errorCode: "FAILS_TO_MOVE_SHARE",
-            reason: "Cannot move shares",
-          });
+          expect(res.status).toEqual(201);
+
+          const response = res.body.data;
+          expect(res.body.outcome).toEqual("SUCCESS");
+          expect(response.quantity).toEqual(expect.any(Number));
+          expect(response.success).toEqual(true);
+          expect(response.sharePricePaid).toEqual(expect.any(Number));
+          expect(response.tickerSymbol).toEqual("AAPL");
         });
       });
     });

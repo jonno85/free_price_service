@@ -8,7 +8,7 @@
     "test": "NODE_ENV=test jest --forceExit",
     "build": "tsc",
     "lint": "tslint -p tsconfig.json -c tslint.json",
-    "dev": "NODE_ENV=localhost nodemon",
+    "dev": "NODE_ENV=dev nodemon",
     "migrate:up": "NODE_ENV=localhost knex migrate:latest",
     "migrate:create": "NODE_ENV=localhost knex migrate:make -x ts"
   },

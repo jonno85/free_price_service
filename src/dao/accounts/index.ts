@@ -39,7 +39,7 @@ export type SaveAccountResult = SaveAccountSuccess | OutcomeFailure;
 
 export interface SaveAccountSuccess extends OutcomeSuccess {
   data: {
-    id: string;
+    account: Account;
   };
 }
 
@@ -72,7 +72,7 @@ export function buildAccountRepository(dependencies: { db: Knex; logger: CustomL
         return {
           outcome: "SUCCESS",
           data: {
-            id,
+            account: { id, name, cash, stocks },
           },
         };
       } catch (err: any) {
@@ -101,7 +101,7 @@ export function buildAccountRepository(dependencies: { db: Knex; logger: CustomL
         return {
           outcome: "SUCCESS",
           data: {
-            id,
+            account: { id, name, cash, stocks },
           },
         };
       } catch (err: any) {

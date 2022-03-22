@@ -1,6 +1,6 @@
 import { CustomLogger } from "ajv";
 import { Knex } from "knex";
-import { AccountRepository } from "../../dao/accounts";
+import { Account, AccountRepository } from "../../dao/accounts";
 import { AssetRepository } from "../../dao/assets";
 import { BrokerService } from "./interface";
 import config from "config";
@@ -138,8 +138,6 @@ export function buildBrokerService(dependencies: BrokerServiceConfiguration): Br
   ): Promise<{ success: boolean }> => {
     const { accountRepository, logger } = dependencies;
 
-    const r = await accountRepository.getAll();
-
     const rewardAccountResult = await accountRepository.getByName(RewardAccountName);
 
     if (rewardAccountResult.outcome === "FAILURE") {
@@ -147,11 +145,25 @@ export function buildBrokerService(dependencies: BrokerServiceConfiguration): Br
       return { success: false };
     }
 
+    let userAccount: Account;
     const userAccountResult = await accountRepository.getByName(toAccount);
-    
+
     if (userAccountResult.outcome === "FAILURE") {
-      logger.error("User account not found");
-      return { success: false };
+      logger.warn("User account not found: going to create it");
+      // return { success: false };
+      const accountSaveResult = await accountRepository.save({
+        id: toAccount,
+        name: toAccount,
+        cash: 0,
+        stocks: [],
+      });
+      if (accountSaveResult.outcome === "FAILURE") {
+        logger.warn("User account failed to create account");
+        return { success: false };
+      }
+      userAccount = accountSaveResult.data.account;
+    } else {
+      userAccount = userAccountResult.data.account;
     }
     const { stocks } = rewardAccountResult.data.account;
     const stockToMoveIndex = stocks.findIndex(
@@ -166,7 +178,6 @@ export function buildBrokerService(dependencies: BrokerServiceConfiguration): Br
     }
     const stockToMove = stocks.splice(stockToMoveIndex);
 
-    const { account: userAccount } = userAccountResult.data;
     userAccount.stocks.push(stockToMove[0]);
     const userAccountUpdateResult = await accountRepository.update(userAccount);
     if (userAccountUpdateResult.outcome === "FAILURE") {
