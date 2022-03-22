@@ -9,21 +9,26 @@ import { createConnectionPool } from "../database/createConnectionPool";
 import { truncateTable } from "../database/scripts/bootstrapDB";
 import { buildBrokerService, buildClaimService } from "../services";
 import { expect, jest, describe, it, beforeAll, beforeEach, afterAll } from "@jest/globals";
+import { buildShareRepository } from "../dao/shares";
+import { buildShareService } from "../services/buy/buy.service";
 
 const db = createConnectionPool();
 const logger = CustomLogger;
 const assetRepository = buildAssetRepository({ db, logger });
 const accountRepository = buildAccountRepository({ db, logger });
+const shareRepository = buildShareRepository({ db, logger });
 const claimRepository = buildClaimRepository({ db, logger });
 const brokerService = buildBrokerService({ db, logger, assetRepository, accountRepository });
 const claimService = buildClaimService({ db, logger, brokerService, claimRepository });
+
+const shareService = buildShareService({ db, logger, brokerService, shareRepository });
 
 describe("Test the Emma Service", () => {
   let server: Server;
   let app: any;
 
   beforeAll(async () => {
-    app = await buildApp({ brokerService, claimService, db, logger });
+    app = await buildApp({ brokerService, claimService, shareService, db, logger });
 
     server = app.listen();
 

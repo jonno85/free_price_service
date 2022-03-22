@@ -150,10 +150,9 @@ export function buildBrokerService(dependencies: BrokerServiceConfiguration): Br
 
     if (userAccountResult.outcome === "FAILURE") {
       logger.warn("User account not found: going to create it");
-      // return { success: false };
       const accountSaveResult = await accountRepository.save({
         name: toAccount,
-        cash: 0,
+        cash: 1000,
         stocks: [],
       });
       if (accountSaveResult.outcome === "FAILURE") {
@@ -178,6 +177,7 @@ export function buildBrokerService(dependencies: BrokerServiceConfiguration): Br
     const stockToMove = stocks.splice(stockToMoveIndex);
 
     userAccount.stocks.push(stockToMove[0]);
+    userAccount.cash -= stockToMove[0].sharePrice * quantity;
     const userAccountUpdateResult = await accountRepository.update(userAccount);
     if (userAccountUpdateResult.outcome === "FAILURE") {
       logger.error("Stock cannot move to user account");

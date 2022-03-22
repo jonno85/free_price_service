@@ -9,20 +9,26 @@ import { buildBrokerService, buildClaimService } from "./services";
 import { buildAssetRepository } from "./dao/assets";
 import { buildAccountRepository } from "./dao/accounts";
 import { buildClaimRepository } from "./dao/claim";
+import { buildShareService } from "./services/buy/buy.service";
+import { buildShareRepository } from "./dao/shares";
 
 const db = createConnectionPool();
 const logger = CustomLogger;
 const assetRepository = buildAssetRepository({ db, logger });
 const accountRepository = buildAccountRepository({ db, logger });
 const claimRepository = buildClaimRepository({ db, logger });
+const shareRepository = buildShareRepository({ db, logger });
+
 const brokerService = buildBrokerService({ db, logger, assetRepository, accountRepository });
 const claimService = buildClaimService({ db, logger, brokerService, claimRepository });
+const shareService = buildShareService({ db, logger, brokerService, shareRepository });
 
 const appDependencies = {
   db,
   logger,
   brokerService,
   claimService,
+  shareService,
 };
 
 let server: Server;
