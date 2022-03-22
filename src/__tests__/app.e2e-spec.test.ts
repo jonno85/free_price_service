@@ -44,8 +44,8 @@ describe("Test the Emma Service", () => {
 
   const initDbData = async () => {
     // init db
-    await accountRepository.save({ id: "emma", name: "emma", cash: 100000, stocks: [] });
-    await accountRepository.save({ id: "user1", name: "user1", cash: 0, stocks: [] });
+    await accountRepository.save({ name: "emma", cash: 100000, stocks: [] });
+    await accountRepository.save({ name: "user1", cash: 0, stocks: [] });
     await assetRepository.save({ id: "1", name: "AAPL", price: 1.0 });
     await assetRepository.save({ id: "2", name: "WWW", price: 10.0 });
     await assetRepository.save({ id: "3", name: "MSFT", price: 100.0 });

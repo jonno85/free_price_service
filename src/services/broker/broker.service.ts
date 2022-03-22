@@ -152,7 +152,6 @@ export function buildBrokerService(dependencies: BrokerServiceConfiguration): Br
       logger.warn("User account not found: going to create it");
       // return { success: false };
       const accountSaveResult = await accountRepository.save({
-        id: toAccount,
         name: toAccount,
         cash: 0,
         stocks: [],

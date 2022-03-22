@@ -3,7 +3,6 @@ import { Knex } from "knex";
 import { OutcomeFailure, OutcomeSuccess } from "../../common/outcome/outcome";
 
 export interface AccountDBRecord {
-  id: string;
   name: string;
   cash: number;
   stocks: any;
@@ -16,7 +15,6 @@ export type StockBought = {
 };
 
 export type Account = {
-  id: string;
   name: string;
   cash: number;
   stocks: StockBought[];
@@ -56,23 +54,22 @@ export function buildAccountRepository(dependencies: { db: Knex; logger: CustomL
   return {
     update: async (account: Account) => {
       const dbTransaction = await db.transaction();
-      const { id, name, cash, stocks } = account;
+      const { name, cash, stocks } = account;
       try {
         await dbTransaction<AccountDBRecord>("accounts")
           .update({
-            id,
             name,
             cash,
             stocks: JSON.stringify(stocks),
           })
-          .where({ id });
+          .where({ name });
 
         await dbTransaction.commit();
 
         return {
           outcome: "SUCCESS",
           data: {
-            account: { id, name, cash, stocks },
+            account: { name, cash, stocks },
           },
         };
       } catch (err: any) {
@@ -87,10 +84,9 @@ export function buildAccountRepository(dependencies: { db: Knex; logger: CustomL
     },
     save: async (account: Account) => {
       const dbTransaction = await db.transaction();
-      const { id, name, cash, stocks } = account;
+      const { name, cash, stocks } = account;
       try {
         await dbTransaction<AccountDBRecord>("accounts").insert({
-          id,
           name,
           cash,
           stocks: JSON.stringify(stocks),
@@ -101,7 +97,7 @@ export function buildAccountRepository(dependencies: { db: Knex; logger: CustomL
         return {
           outcome: "SUCCESS",
           data: {
-            account: { id, name, cash, stocks },
+            account: { name, cash, stocks },
           },
         };
       } catch (err: any) {
