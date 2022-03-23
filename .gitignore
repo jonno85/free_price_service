@@ -8,3 +8,4 @@ database
 npm-debug.log
 tests/*snapshots*
 package-lock.json
+dist

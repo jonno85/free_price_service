@@ -1,51 +1,26 @@
-version: "3"
-services:
-  app:
-    build:
-      dockerfile: Dockerfile
-      context: .
-    environment:
-      - POSTGRES_USER=test
-      - POSTGRES_PASSWORD=test
-      - POSTGRES_DB=test
-      - POSTGRES_HOST=postgres
-    links:
-      - postgres
-    ports:
-      - "3000:3000"
-    networks:
-      - db-manager
+version: "2.4"
 
+services:
   postgres:
     image: postgres:latest
-    environment:
-      - POSTGRES_USER=test
-      - POSTGRES_PASSWORD=test
-      - POSTGRES_DB=test
-      - POSTGRES_HOST=postgres
+    container_name: emma_postgres
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U local -d test"]
+      interval: 1s
+      timeout: 30s
+      retries: 50
     ports:
-      - "5432:5432"
-    networks:
-      - db-manager
-    volumes:
-      - ./scripts/postgres-config.sql:/docker-entrypoint-initdb.d/postgres-config.sql
-
-  db-manager:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    depends_on:
-      - postgres
-    command: "sh -c 'npm install && npm run migrate:up'"
+      - "5435:5432"
     environment:
-      - POSTGRES_USER=test
-      - POSTGRES_PASSWORD=test
-      - POSTGRES_DB=test
-      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=emma
+      - POSTGRES_USER=local
+      - POSTGRES_PASSWORD=local
+      - POSTGRES_HOSTNAME=postgres
     networks:
       - db-manager
     volumes:
-      - ./scripts/postgres-config.sql:/docker-entrypoint-initdb.d/postgres-config.sql
+      - ./src/database/scripts/postgres-config.sql:/docker-entrypoint-initdb.d/postgres-config.sql
 
 networks:
   db-manager:

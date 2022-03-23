@@ -4,13 +4,15 @@ import { ClaimFreeShareSuccess, ClaimService } from "./interface";
 import config from "config";
 import { BrokerService } from "../broker/interface";
 import { OutcomeFailure } from "../../common/outcome/outcome";
-import { ClaimRepository } from "../../dao/claim";
+import { Claim, ClaimRepository } from "../../dao/claim";
+import { ShareRepository } from "../../dao/shares";
 
 export interface ClaimServiceConfiguration {
   db: Knex;
   logger: CustomLogger;
   brokerService: BrokerService;
   claimRepository: ClaimRepository;
+  shareRepository: ShareRepository;
 }
 
 export type ClaimEntry = {
@@ -20,20 +22,61 @@ export type ClaimEntry = {
   max: number;
 };
 const claimsConfiguration = config.get("claims") as Array<ClaimEntry>;
+const cpa = config.get("cpa.value") as number;
+const user_threshold = config.get("cpa.user_threshold") as number;
 
-export function getSelectedValue() {
-  const randomClaimAmount = Math.random();
+export function getSelectedValue(currentTotalStock: number, currentTotalUser: number, currentTotalShareAmount: number) {
+  if (currentTotalUser > user_threshold && currentTotalShareAmount / currentTotalStock === cpa) {
+    // Logic for bonus point #1
+  }
+
+  const randomClaimAmountProb = Math.random();
 
   const selectedRange = claimsConfiguration.filter(
-    (entry) => randomClaimAmount >= entry.p0 && entry.p1 > randomClaimAmount
+    (entry) => randomClaimAmountProb >= entry.p0 && entry.p1 > randomClaimAmountProb
   )?.[0] ?? { min: 3, max: 10 };
   return Math.floor(Math.random() * (selectedRange.max - selectedRange.min) + selectedRange.min);
 }
 
 export function buildClaimService(dependencies: ClaimServiceConfiguration): ClaimService {
-  const { brokerService, logger, claimRepository } = dependencies;
+  const { brokerService, logger, claimRepository, shareRepository } = dependencies;
 
   const updatedPrices = new Map<string, number>();
+  // default uninitiated values
+  let currentTotalAmount = -1;
+  let currentTotalStock = -1;
+  let currentTotalUser = -1;
+  let currentTotalShareAmount = 0;
+
+  const fetchEmittedClaimsData = () => {
+    let currentTotalAmount = 0;
+    let currentTotalStock = 0;
+    let currentTotalUser = 0;
+    return new Promise((resolve) => {
+      resolve(
+        claimRepository.getAll().then((getAllResult) => {
+          if (getAllResult.outcome === "FAILURE") {
+            return {
+              currentTotalAmount,
+              currentTotalStock,
+              currentTotalUser,
+            };
+          }
+          getAllResult.data.claims.forEach((claim: Claim) => {
+            currentTotalAmount += claim.amount;
+            currentTotalStock += claim.stocks.reduce((prev, currentValue) => prev + currentValue.quantity, 0);
+            currentTotalUser += 1;
+          });
+          return {
+            currentTotalAmount,
+            currentTotalStock,
+            currentTotalUser,
+          };
+        })
+      );
+    });
+  };
+  const fetchEmittedClaimsDataResult = fetchEmittedClaimsData();
 
   const collectSharePrice = async () => {
     const listTradableAssetsResult = await brokerService.listTradableAssets();
@@ -73,7 +116,20 @@ export function buildClaimService(dependencies: ClaimServiceConfiguration): Clai
       };
     }
 
-    const selectedValue = getSelectedValue();
+    if (currentTotalAmount === -1 || currentTotalStock === -1) {
+      const prefetchedData = (await fetchEmittedClaimsDataResult) as any;
+      currentTotalAmount = prefetchedData.currentTotalAmount;
+      currentTotalStock = prefetchedData.currentTotalStock;
+      currentTotalUser = prefetchedData.currentTotalUser;
+    }
+
+    // Bonus task #1
+    const totalAmountResult = await shareRepository.getTotalShareAmount();
+    if (totalAmountResult.outcome === "SUCCESS") {
+      currentTotalShareAmount = totalAmountResult.data.amount;
+    }
+
+    const selectedValue = getSelectedValue(currentTotalStock, currentTotalUser, currentTotalShareAmount);
 
     // can be cashed but the stock are fluctuating purposely
     await collectSharePrice();
@@ -111,7 +167,12 @@ export function buildClaimService(dependencies: ClaimServiceConfiguration): Clai
       };
     }
 
-    const saveResult = await claimRepository.save({ name: user, stocks: [{ quantity, tickerSymbol }] });
+    const amount = sharePricePaid * quantity;
+    const saveResult = await claimRepository.save({
+      name: user,
+      stocks: [{ quantity, tickerSymbol }],
+      amount,
+    });
     if (saveResult.outcome === "FAILURE") {
       return {
         outcome: "FAILURE",
@@ -120,6 +181,9 @@ export function buildClaimService(dependencies: ClaimServiceConfiguration): Clai
       };
     }
 
+    currentTotalStock += quantity;
+    currentTotalAmount += amount;
+    currentTotalUser += 1;
     return {
       outcome: "SUCCESS",
       data: {

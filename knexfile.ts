@@ -3,7 +3,7 @@ import { Knex } from "knex";
 import { resolve } from "path";
 
 const connection: Knex.PgConnectionConfig = {
-  host: config.get("postgres.host"),
+  // host: config.get("postgres.host"),
   database: config.get("postgres.database"),
   user: config.get("postgres.user"),
   password: config.get("postgres.password"),

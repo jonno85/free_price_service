@@ -5,6 +5,7 @@ import { OutcomeFailure, OutcomeSuccess } from "../../common/outcome/outcome";
 export interface ClaimDBRecord {
   name: string;
   stocks: any;
+  amount: number;
 }
 
 export type StockBought = {
@@ -15,6 +16,7 @@ export type StockBought = {
 export type Claim = {
   name: string;
   stocks: StockBought[];
+  amount: number;
 };
 export interface GetAllSuccess extends OutcomeSuccess {
   data: {
@@ -24,15 +26,15 @@ export interface GetAllSuccess extends OutcomeSuccess {
 
 export interface GetByIdSucces extends OutcomeSuccess {
   data: {
-    account: Claim;
+    claim: Claim;
   };
 }
 
 export type GetAllResult = GetAllSuccess | OutcomeFailure;
 export type GetByIdResult = GetByIdSucces | OutcomeFailure;
-export type SaveClaimResult = SaveAccountSuccess | OutcomeFailure;
+export type SaveClaimResult = SaveClaimSuccess | OutcomeFailure;
 
-export interface SaveAccountSuccess extends OutcomeSuccess {
+export interface SaveClaimSuccess extends OutcomeSuccess {
   data: {
     name: string;
   };
@@ -50,11 +52,12 @@ export function buildClaimRepository(dependencies: { db: Knex; logger: CustomLog
   return {
     save: async (claim: Claim) => {
       const dbTransaction = await db.transaction();
-      const { name, stocks } = claim;
+      const { name, stocks, amount } = claim;
       try {
         await dbTransaction<ClaimDBRecord>("claims").insert({
           name,
           stocks: JSON.stringify(stocks),
+          amount,
         });
 
         await dbTransaction.commit();
@@ -99,7 +102,7 @@ export function buildClaimRepository(dependencies: { db: Knex; logger: CustomLog
       try {
         const dbResult = await db.select("*").from<ClaimDBRecord>("claims").where({ name });
 
-        if(dbResult.length === 0) {
+        if (dbResult.length === 0) {
           return {
             outcome: "FAILURE",
             errorCode: "CLAIM_NOT_FOUND",
@@ -108,12 +111,11 @@ export function buildClaimRepository(dependencies: { db: Knex; logger: CustomLog
               name,
             },
           };
-
         }
         return {
           outcome: "SUCCESS",
           data: {
-            account: dbResult[0],
+            claim: dbResult[0],
           },
         };
       } catch (err: any) {

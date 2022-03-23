@@ -32,9 +32,15 @@ export interface GetByIdSucces extends OutcomeSuccess {
     share: Share;
   };
 }
+export interface GetTotalShareAmountSuccess extends OutcomeSuccess {
+  data: {
+    amount: number;
+  };
+}
 
 export type GetAllResult = GetAllSuccess | OutcomeFailure;
 export type GetByIdResult = GetByIdSucces | OutcomeFailure;
+export type GetTotalShareAmountResult = GetTotalShareAmountSuccess | OutcomeFailure;
 export type SaveShareResult = SaveShareSuccess | OutcomeFailure;
 
 export interface SaveShareSuccess extends OutcomeSuccess {
@@ -47,6 +53,7 @@ export interface ShareRepository {
   save(share: Share): Promise<SaveShareResult>;
   getAll(): Promise<GetAllResult>;
   getByName(name: string): Promise<GetByIdResult>;
+  getTotalShareAmount(): Promise<GetTotalShareAmountResult>;
 }
 
 export function buildShareRepository(dependencies: { db: Knex; logger: CustomLogger }): ShareRepository {
@@ -56,7 +63,6 @@ export function buildShareRepository(dependencies: { db: Knex; logger: CustomLog
     save: async (share: Share) => {
       const dbTransaction = await db.transaction();
       const { account, order, amount, date } = share;
-      console.log("share is", share);
 
       try {
         await dbTransaction<ShareDBRecord>("shares").insert({
@@ -87,7 +93,6 @@ export function buildShareRepository(dependencies: { db: Knex; logger: CustomLog
     getAll: async () => {
       try {
         const dbResult = await db.select("*").from<ShareDBRecord>("shares");
-        console.log("getallllllllllll");
 
         return {
           outcome: "SUCCESS",
@@ -133,6 +138,23 @@ export function buildShareRepository(dependencies: { db: Knex; logger: CustomLog
           reason: "Cannot get values",
         };
       }
+    },
+    getTotalShareAmount: async () => {
+      const dbResult = await db("shares").select(db.raw("SUM(shares.amount)"));
+
+      if (dbResult.length === 0) {
+        return {
+          outcome: "FAILURE",
+          errorCode: "SHARE_NOT_FOUND",
+          reason: "Total amount not available",
+        };
+      }
+      return {
+        outcome: "SUCCESS",
+        data: {
+          amount: dbResult[0].sum,
+        },
+      };
     },
   };
 }

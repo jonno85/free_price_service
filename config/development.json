@@ -16,7 +16,10 @@
   "account": {
     "reward": "emma"
   },
-  "cpa":100,
+  "cpa": {
+    "value": 20,
+    "user_threshold": 20
+  },
   "claims": [
     { "p0": 0, "p1": 0.94, "min": 3, "max": 10 },
     { "p0": 0.95, "p1": 0.97, "min": 11, "max": 25 },

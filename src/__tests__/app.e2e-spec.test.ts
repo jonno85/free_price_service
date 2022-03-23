@@ -19,7 +19,7 @@ const accountRepository = buildAccountRepository({ db, logger });
 const shareRepository = buildShareRepository({ db, logger });
 const claimRepository = buildClaimRepository({ db, logger });
 const brokerService = buildBrokerService({ db, logger, assetRepository, accountRepository });
-const claimService = buildClaimService({ db, logger, brokerService, claimRepository });
+const claimService = buildClaimService({ db, logger, brokerService, claimRepository, shareRepository });
 
 const shareService = buildShareService({ db, logger, brokerService, shareRepository });
 
